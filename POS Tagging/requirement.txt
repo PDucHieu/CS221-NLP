@@ -1,6 +1,0 @@
-streamlit
-nltk
-conllu
-sklearn-crfsuite
-joblib
-scikit-learn
