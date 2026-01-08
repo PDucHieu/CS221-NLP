@@ -1,22 +1,47 @@
-# run.py - Đặt cùng cấp với app.py
+# run.py
 import os
 import sys
 
-# Đảm bảo import đúng
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Đảm bảo import đúng thứ tự
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, current_dir)
 
-# Import và chạy app
-from app import main
+# Import các module theo thứ tự để tránh circular import
+print("🔧 Setting up environment...")
 
-if __name__ == "__main__":
-    # Kiểm tra cấu trúc thư mục
-    print("Checking directory structure...")
-    required_dirs = ['models', 'preprocessing', 'data_loader', 'evaluation']
-    for dir_name in required_dirs:
-        if not os.path.exists(dir_name):
-            print(f"Creating directory: {dir_name}")
-            os.makedirs(dir_name, exist_ok=True)
+# 1. Import preprocessing trước (nó không import models)
+try:
+    import preprocessing.features
+    print("✅ preprocessing.features imported")
+except Exception as e:
+    print(f"⚠️ preprocessing.features: {e}")
+
+# 2. Import models
+try:
+    # Test import CRF model
+    from models.crf_model import CRFTagger
+    print("✅ CRFTagger imported successfully")
     
-    # Chạy Streamlit
-    import subprocess
-    subprocess.run(["streamlit", "run", "app.py"])
+    # Test tạo instance
+    test_tagger = CRFTagger()
+    print(f"   Model loaded: {test_tagger._model_loaded}")
+    
+except Exception as e:
+    print(f"❌ CRF model import failed: {e}")
+    import traceback
+    traceback.print_exc()
+
+# 3. Chạy app
+print("\n🚀 Starting Streamlit app...")
+import subprocess
+
+# Chạy với environment đã setup
+env = os.environ.copy()
+env["PYTHONPATH"] = current_dir + ":" + env.get("PYTHONPATH", "")
+
+subprocess.run([
+    "streamlit", "run", "app.py",
+    "--server.address", "0.0.0.0",
+    "--server.port", "8501",
+    "--theme.base", "light"
+], env=env)
